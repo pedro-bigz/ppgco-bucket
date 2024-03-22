@@ -1,0 +1,13 @@
+export * as modelTemplate from './model.template';
+export * as modelIndexTemplate from './model-index.template';
+export * as controllerTemplate from './controller.template';
+export * as controllerSpecTemplate from './controller-spec.template';
+export * as serviceTemplate from './service.template';
+export * as serviceSpecTemplate from './service-spec.template';
+export * as constantsTemplate from './constants.template';
+export * as providersTemplate from './providers.template';
+export * as moduleTemplate from './module.template';
+export * as moduleIndexTemplate from './module-index.template';
+export * as dtoCreateTemplate from './dto-create.template';
+export * as dtoUpdateTemplate from './dto-update.template';
+export * as dtoIndexTemplate from './dto-index.template';
