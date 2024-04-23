@@ -20,20 +20,23 @@ export class File extends Model {
   name: string;
 
   @Column
+  password: string;
+
+  @Column
   description: string;
+
+  @Column
+  mimeType: string;
+
+  @Column
+  extension: string;
 
   @Column
   path: string;
 
   @Column
   @ForeignKey(() => Bucket)
-  bucket_id: number;
-
-  @CreatedAt
-  created_at: Date;
-
-  @UpdatedAt
-  updated_at: Date;
+  bucketId: number;
 
   @BelongsTo(() => Bucket)
   bucket: Bucket;

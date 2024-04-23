@@ -19,27 +19,25 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  public async signIn(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
+  public async signIn(
+    accessKeyId: string,
+    secretAccessKey: string,
+  ): Promise<any> {
+    const user = await this.usersService.findByAccessKeyID(accessKeyId);
 
     if (!user) {
       throw new UnauthorizedException();
     }
 
-    const {
-      password: storedPassword,
-      id: userId,
-      ...usedData
-    } = user.dataValues;
+    const { secretAccessKey: storedPassword, id: userId } = user.dataValues;
 
-    if (!bcrypt.compareSync(password, storedPassword)) {
+    if (!bcrypt.compareSync(secretAccessKey, storedPassword)) {
       throw new UnauthorizedException();
     }
 
     const payload = {
       _id: userId,
-      email,
-      nome: usedData.nome,
+      accessKeyId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -54,14 +52,6 @@ export class AuthService {
 
     return {
       auth: { accessToken, refreshToken },
-      user: {
-        id: userId,
-        nome: usedData.nome,
-        email: usedData.email,
-        avatar: usedData.avatar,
-        master: usedData.master,
-        codiemp: usedData.codiemp,
-      },
     };
   }
 
@@ -70,13 +60,17 @@ export class AuthService {
     return type === 'Bearer' ? token : '';
   }
 
-  public async verify(authorization: string) {
+  public async verify(authorization: string | undefined | null) {
     try {
-      const hasAccess = this.jwtService.verify(
+      if (!authorization) {
+        throw new Error();
+      }
+
+      const hasAccess = await this.jwtService.verifyAsync<TokenType>(
         this.extractTokenFromAuthorization(authorization),
       );
 
-      return { hasAccess };
+      return { hasAccess: !!hasAccess };
     } catch (error) {
       return { hasAccess: false };
     }

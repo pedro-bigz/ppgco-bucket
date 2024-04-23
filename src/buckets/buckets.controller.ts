@@ -1,13 +1,4 @@
-import {
-  Body,
-  Query,
-  Param,
-  Get,
-  Patch,
-  Post,
-  Delete,
-  Controller,
-} from '@nestjs/common';
+import { Body, Param, Patch, Post, Controller } from '@nestjs/common';
 import { BucketsService } from './buckets.service';
 import {
   CreateBucketsDto,
@@ -15,8 +6,8 @@ import {
   createBucketsSchema,
   updateBucketsSchema,
 } from './dto';
-import { ZodValidationPipe } from 'core';
-import { RequestUser, UserPayload } from 'src/user';
+import { ZodValidationPipe } from 'src/core';
+import { RequestUser, User } from 'src/user';
 
 @Controller('buckets')
 export class BucketsController {
@@ -24,21 +15,21 @@ export class BucketsController {
 
   @Post()
   public create(
-    @RequestUser() user: UserPayload,
+    @RequestUser() user: User,
     @Body(new ZodValidationPipe(createBucketsSchema))
     createBucketsDto: CreateBucketsDto,
   ) {
-    console.log({ user });
-    return this.bucketsService.create(user._id, createBucketsDto);
+    return this.bucketsService.create(user.id, createBucketsDto);
   }
 
-  @Patch(':id')
+  @Patch(':bucketKey')
   public update(
-    @Param('id') id: string,
+    @RequestUser() user: User,
+    @Param('bucketKey') bucketKey: string,
     @Body(new ZodValidationPipe(updateBucketsSchema))
     updateBucketsDto: UpdateBucketsDto,
   ) {
-    return this.bucketsService.update(+id, updateBucketsDto);
+    return this.bucketsService.update(bucketKey, user, updateBucketsDto);
   }
 
   // @Delete(':id')

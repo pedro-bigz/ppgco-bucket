@@ -7,8 +7,9 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { IS_PUBLIC_KEY } from './auth.decorator';
+import { IS_FORCED_AUTH, IS_PUBLIC_KEY } from './auth.decorator';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from 'src/user';
 
 export type UserPayload = {
   _id: number;
@@ -21,6 +22,7 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,11 +30,19 @@ export class AuthGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
+    const isForceAuth = this.reflector.getAllAndOverride<boolean>(
+      IS_FORCED_AUTH,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (isPublic) return true;
+    if (isPublic && !isForceAuth) return true;
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+
+    if (!token && isForceAuth) {
+      return true;
+    }
 
     if (!token) {
       throw new UnauthorizedException();
@@ -43,11 +53,13 @@ export class AuthGuard implements CanActivate {
         secret: this.configService.get<string>('JWT_SECRET_KEY'),
       });
 
+      const user = await this.userService.findOne(payload._id);
+
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      request['user'] = payload as UserPayload;
+      request['user'] = user.dataValues;
     } catch (error) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException(error, error.message);
     }
 
     return true;

@@ -11,7 +11,7 @@ export class FilesystemService {
   private loggerPath: string;
 
   public constructor() {
-    this.rootPath = path.join(__dirname, '../..');
+    this.rootPath = path.join(__dirname, '../../..');
     this.bucketPath = path.join(this.rootPath, BUCKET_PATH);
     this.loggerPath = path.join(this.rootPath, LOGGER_PATH);
   }
@@ -35,6 +35,10 @@ export class FilesystemService {
     return this.upload(absolutepath, buffer)
       .then(() => true)
       .catch(() => false);
+  }
+
+  public async getFromBucket(bucketKey: string, filename: string) {
+    return this.get(this.applyBucketPath(bucketKey, filename));
   }
 
   public resolveLoggerName() {
@@ -79,8 +83,8 @@ export class FilesystemService {
     return fullname.split('.')[0];
   }
 
-  public applyBucketPath(filename: string): string {
-    return path.join(this.bucketPath, filename);
+  public applyBucketPath(...paths: string[]): string {
+    return path.join(this.bucketPath, ...paths);
   }
 
   public applyLoggerPath(filename: string): string {

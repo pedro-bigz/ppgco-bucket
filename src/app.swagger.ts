@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { patchNestJsSwagger } from 'nestjs-zod';
 
 type AppSwaggerDataType = {
   title: string;
@@ -8,7 +9,9 @@ type AppSwaggerDataType = {
 };
 
 export class AppSwagger {
-  constructor(private data: AppSwaggerDataType) {}
+  constructor(private data: AppSwaggerDataType) {
+    patchNestJsSwagger();
+  }
 
   static create(data: AppSwaggerDataType) {
     return new AppSwagger(data);

@@ -7,11 +7,13 @@ import {
   UsePipes,
   Get,
   Request,
+  Head,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ZodValidationPipe } from 'core';
+import { ZodValidationPipe } from 'src/core';
 import { LoginDto, loginSchema } from './dto';
-import { Public } from './auth.decorator';
+import { BearerToken, Public } from './auth.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -21,8 +23,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   @UsePipes(new ZodValidationPipe(loginSchema))
-  public signIn(@Body() { email, password }: LoginDto) {
-    return this.authService.signIn(email, password);
+  public signIn(@Body() { accessKeyId, secretAccessKey }: LoginDto) {
+    return this.authService.signIn(accessKeyId, secretAccessKey);
   }
 
   @Get('profile')
@@ -30,14 +32,21 @@ export class AuthController {
     return req.user;
   }
 
-  @Post('check-token')
-  public check(@Request() req: any) {
-    return this.authService.verify(req.headers.authorization);
+  @Public()
+  @Head('check-token')
+  public async check(@BearerToken() token: string) {
+    const { hasAccess } = await this.authService.verify(token);
+
+    if (!hasAccess) {
+      throw new UnauthorizedException();
+    }
+
+    return hasAccess;
   }
 
   @Public()
   @Post('refresh')
-  public refresh(@Body() body) {
+  public refresh(@Body() body: any) {
     return this.authService.refresh(body);
   }
 }

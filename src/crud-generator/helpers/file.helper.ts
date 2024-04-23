@@ -5,9 +5,9 @@ import {
   FileSystemException,
   FileAlreadyExistsException,
   FolderAlreadyExistsException,
-} from 'core/Exception';
+} from 'src/core/Exception';
 import { SrcPathHelper } from '.';
-import { convertTabsInSpaces } from 'utils';
+import { convertTabsInSpaces } from 'src/utils';
 
 export type FileReplaceContentType = {
   find: string;

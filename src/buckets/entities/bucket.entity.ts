@@ -26,20 +26,14 @@ export class Bucket extends Model {
   active: boolean;
 
   @Column
-  is_private: boolean;
+  isPrivate: boolean;
 
   @Column
-  bucket_key: string;
+  bucketKey: string;
 
   @Column
   @ForeignKey(() => User)
-  owner_id: number;
-
-  @CreatedAt
-  created_at: Date;
-
-  @UpdatedAt
-  updated_at: Date;
+  ownerId: number;
 
   @BelongsTo(() => User)
   owner: User;

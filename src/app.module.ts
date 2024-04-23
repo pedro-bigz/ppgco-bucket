@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { JwtModule } from '@nestjs/jwt';
 import { env } from 'process';
-import { SequelizeConfig } from 'core';
+import { SequelizeConfig } from 'src/core';
 import { AuthController, AuthModule, AuthService } from './auth';
 import { User, UserModule } from './user';
 import { CrudGeneratorModule } from './crud-generator';

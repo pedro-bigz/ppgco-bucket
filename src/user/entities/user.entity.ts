@@ -16,40 +16,17 @@ export class User extends Model {
   id: number;
 
   @Column
-  first_name: string;
+  accessKeyId: string;
 
   @Column
-  last_name: string;
+  secretAccessKey: string;
 
   @Column
-  email: string;
-
-  @Column
-  password: string;
-
-  @Column
-  remember_token: string;
-
-  @Column
-  email_verified_at: Date;
+  rememberToken: string;
 
   @Column
   activated: boolean;
 
   @Column
-  language: string;
-
-  @CreatedAt
-  created_at: Date;
-
-  @UpdatedAt
-  updated_at: Date;
-
-  @DeletedAt
-  deleted_at: Date;
-
-  @AfterCreate
-  static sendVerificationEmail(instance: User) {
-    console.log(instance);
-  }
+  forbidden: boolean;
 }

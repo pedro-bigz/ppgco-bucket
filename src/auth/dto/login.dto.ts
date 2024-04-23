@@ -2,14 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string(),
-  password: z.string(),
+  accessKeyId: z.string(),
+  secretAccessKey: z.string(),
 });
 
 export class LoginDto {
   @ApiProperty({ required: false })
-  email: string;
+  accessKeyId: string;
 
   @ApiProperty({ required: false })
-  password: string;
+  secretAccessKey: string;
 }

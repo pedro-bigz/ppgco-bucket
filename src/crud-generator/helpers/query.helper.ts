@@ -39,8 +39,6 @@ export class QueryHelper {
       result as ColumnInfoType[],
     );
 
-    console.log(this.attributes);
-
     return this.attributes;
   }
 

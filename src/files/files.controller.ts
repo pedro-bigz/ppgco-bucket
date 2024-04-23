@@ -1,24 +1,32 @@
 import {
-  Body,
-  Query,
-  Param,
   Get,
-  Patch,
   Post,
-  Delete,
+  Body,
+  Param,
   Controller,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
   UnauthorizedException,
+  Response,
+  HttpStatus,
+  Request,
 } from '@nestjs/common';
+import { ZodValidationPipe } from 'src/core';
+import { isAjax } from 'src/utils';
 import { FilesService } from './files.service';
-import { ZodValidationPipe } from 'core';
-import { Public } from 'src/auth';
-import { UploadFileDto, uploadFileSchema } from './dto';
+import {
+  GetFileDto,
+  getFileSchema,
+  UploadFileDto,
+  uploadFileSchema,
+} from './dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BucketsService } from 'src/buckets';
-import { RequestUser, UserPayload } from 'src/user';
+import { RequestUser, User } from 'src/user';
+import { Request as Req, Response as Res } from 'express';
+import { File as FileMetadata } from './entities';
+import { ForceAuth, Public } from 'src/auth';
 
 @Controller('files')
 export class FilesController {
@@ -27,12 +35,11 @@ export class FilesController {
     private readonly bucketsService: BucketsService,
   ) {}
 
-  @Public()
   @Post('upload/:bucketKey')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @Param('bucketKey') bucketKey: string,
-    @RequestUser() user: UserPayload,
+    @RequestUser() user: User,
     @UploadedFile() file: Express.Multer.File,
     @Body(new ZodValidationPipe(uploadFileSchema))
     uploadFileDto: UploadFileDto,
@@ -41,9 +48,13 @@ export class FilesController {
       throw new BadRequestException('File is required');
     }
 
-    console.log({
-      file,
-    });
+    console.log({ uploadFileDto });
+
+    if (file.originalname === 'blob' && uploadFileDto.filename) {
+      file.originalname = uploadFileDto.filename;
+    }
+
+    console.log({ file });
 
     const bucket = await this.bucketsService.findOne(bucketKey);
     const hasAccess = this.bucketsService.canAccess(user, bucket);
@@ -56,20 +67,49 @@ export class FilesController {
   }
 
   @Public()
-  @Get('path/:bucketKey')
+  @ForceAuth()
+  @Get('path/:bucketKey/:filename')
   async getFile(
-    @RequestUser() user: UserPayload,
+    @Response() res: Res,
+    @Request() req: Req,
+    @RequestUser() user: User,
     @Param('bucketKey') bucketKey: string,
-    @Query('filename') filePath: string,
+    @Param('filename') filePath: string,
+    @Body(new ZodValidationPipe(getFileSchema)) getFileDto: GetFileDto,
   ) {
     const bucket = await this.bucketsService.findOne(bucketKey);
-    const hasAccess = this.bucketsService.canAccess(user, bucket);
+    const hasAccess = this.bucketsService.canAccess(user, bucket.dataValues);
 
     if (!hasAccess) {
       throw new UnauthorizedException('Unauthorized action');
     }
 
-    return this.filesService.getFile(bucket, filePath);
+    const { file, metadata } = await this.filesService.getFile(
+      bucket.dataValues,
+      filePath,
+      getFileDto.password,
+    );
+
+    const statusCode = !isAjax(req)
+      ? HttpStatus.OK
+      : HttpStatus.PARTIAL_CONTENT;
+
+    return res
+      .status(statusCode)
+      .set(this.getSendFileHeaders(metadata, file))
+      .send(file);
+  }
+
+  private getSendFileHeaders(metadata: FileMetadata, file: Buffer) {
+    return {
+      'Content-Type': metadata.mimeType,
+      'Content-Disposition': `attachment; filename="${metadata.name}${metadata.extension}"`,
+      'Content-Transfer-Encoding': 'binary',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'private',
+      'Content-Length': file.byteLength,
+      Pragma: 'private',
+    };
   }
 
   // @Delete(':id')

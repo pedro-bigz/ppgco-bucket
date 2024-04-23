@@ -7,14 +7,15 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
+import { Public } from 'src/auth/auth.decorator';
+import { CreateUserDto, UpdateUserDto } from './dto';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('user')
 export class UserController {
   public constructor(private readonly userService: UserService) {}
 
+  @Public()
   @Post()
   public create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
