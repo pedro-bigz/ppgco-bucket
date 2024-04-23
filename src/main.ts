@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { AppSwagger } from './app.swagger';
+import { AppModule } from 'src/app.module';
+import { AppSwagger } from 'src/app.swagger';
 import { configHelper } from 'src/core';
 
 async function bootstrap() {
