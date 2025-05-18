@@ -1,50 +1,27 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { SequelizeModule } from '@nestjs/sequelize';
-import { JwtModule } from '@nestjs/jwt';
-import { env } from 'process';
-import { SequelizeConfig } from 'src/core';
-import { AuthController, AuthModule, AuthService } from './auth';
-import { User, UserModule } from './user';
-import { CrudGeneratorModule } from './crud-generator';
-import { FilesModule, File } from './files';
-import { BucketsModule, Bucket } from './buckets';
-import { FilesystemService } from './filesystem/filesystem.service';
-import { FilesystemModule } from './filesystem/filesystem.module';
-// {IMPORTS} Don't delete me, I'm used for automatic code generation
-
-const orm = {
-  tables: [
-    User,
-    File,
-    Bucket,
-    // {MODELS} Don't delete me, I'm used for automatic code generation
-  ],
-  views: [],
-};
+import { Logger, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule, AuthService } from 'src/auth';
+import { UserModule } from 'src/users';
+import { FilesModule } from 'src/files';
+import { BucketsModule } from 'src/buckets';
+import { FilesystemService } from 'src/filesystem/filesystem.service';
+import { FilesystemModule } from 'src/filesystem/filesystem.module';
+import { ApiKeyModule } from 'src/api-key/api-key.module';
+import { DatabaseModule } from 'src/database';
+import { JwtModule } from 'src/jwt';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    SequelizeModule.forRoot(
-      SequelizeConfig.configure({
-        models: [...orm.tables, ...orm.views],
-        // models: [__dirname + '/**/entities/*.entity.ts'],
-      }),
-    ),
-    JwtModule.register({
-      global: true,
-      secret: env.JWT_SECRET_KEY,
-    }),
+    JwtModule,
+    DatabaseModule,
+    ApiKeyModule,
     AuthModule,
     UserModule,
-    CrudGeneratorModule,
     FilesModule,
     BucketsModule,
     FilesystemModule,
-    // {MODULE} Don't delete me, I'm used for automatic code generation
   ],
-  controllers: [AuthController],
-  providers: [AuthService, FilesystemService],
+  providers: [AuthService, FilesystemService, Logger],
 })
 export class AppModule {}

@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import fs from 'fs';
 import path from 'path';
-import { BUCKET_PATH, LOGGER_PATH } from './filesystem.constants';
 import dayjs from 'dayjs';
+import { BUCKET_PATH } from './filesystem.constants';
 
 @Injectable()
 export class FilesystemService {
@@ -10,18 +10,19 @@ export class FilesystemService {
   private bucketPath: string;
   private loggerPath: string;
 
-  public constructor() {
-    this.rootPath = path.join(__dirname, '../../..');
+  public constructor(private readonly logger: Logger) {
+    this.rootPath = path.join(__dirname, '../..');
     this.bucketPath = path.join(this.rootPath, BUCKET_PATH);
-    this.loggerPath = path.join(this.rootPath, LOGGER_PATH);
   }
 
   public mkdir(bucketKey: string): boolean {
     const absolutepath = path.join(this.bucketPath, bucketKey);
+
     if (fs.existsSync(absolutepath)) {
       return false;
     }
-    fs.mkdirSync(absolutepath);
+
+    fs.mkdirSync(absolutepath, { recursive: true });
     return true;
   }
 
@@ -29,8 +30,12 @@ export class FilesystemService {
     const filename = this.filename(filepath);
     const extname = this.extname(filepath);
 
+    console.log({ filename, extname });
+
     const basename = filename + extname;
     const absolutepath = this.applyBucketPath(basename);
+
+    console.log({ basename, absolutepath });
 
     return this.upload(absolutepath, buffer)
       .then(() => true)
@@ -116,9 +121,6 @@ export class FilesystemService {
   }
 
   public logError(err: NodeJS.ErrnoException) {
-    const loggerPath = this.resolveLoggerName();
-    const absolutepath = this.applyLoggerPath(loggerPath);
-
-    return this.upload(absolutepath, JSON.stringify(err));
+    this.logger.error(err);
   }
 }

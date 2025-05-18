@@ -13,7 +13,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/core';
-import { isAjax } from 'src/utils';
+import { getSendFileHeaders, isAjax } from 'src/utils';
 import { FilesService } from './files.service';
 import {
   GetFileDto,
@@ -23,10 +23,11 @@ import {
 } from './dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BucketsService } from 'src/buckets';
-import { RequestUser, User } from 'src/user';
+import { RequestUser, User } from 'src/users';
 import { Request as Req, Response as Res } from 'express';
 import { File as FileMetadata } from './entities';
-import { ForceAuth, Public } from 'src/auth';
+import { DontThrowAccessErrors } from 'src/auth';
+import { FileDispositionHeader } from './files.enum';
 
 @Controller('files')
 export class FilesController {
@@ -35,7 +36,7 @@ export class FilesController {
     private readonly bucketsService: BucketsService,
   ) {}
 
-  @Post('upload/:bucketKey')
+  @Post(':bucketKey')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @Param('bucketKey') bucketKey: string,
@@ -48,13 +49,10 @@ export class FilesController {
       throw new BadRequestException('File is required');
     }
 
-    console.log({ uploadFileDto });
-
-    if (file.originalname === 'blob' && uploadFileDto.filename) {
-      file.originalname = uploadFileDto.filename;
+    if (file.originalname === 'blob') {
+      file.originalname =
+        uploadFileDto.originalname || uploadFileDto.filename || 'blob';
     }
-
-    console.log({ file });
 
     const bucket = await this.bucketsService.findOne(bucketKey);
     const hasAccess = this.bucketsService.canAccess(user, bucket);
@@ -66,15 +64,14 @@ export class FilesController {
     return this.filesService.uploadFile(bucket, file, uploadFileDto);
   }
 
-  @Public()
-  @ForceAuth()
-  @Get('path/:bucketKey/:filename')
+  @Get(':bucketKey/:filename')
+  @DontThrowAccessErrors()
   async getFile(
     @Response() res: Res,
     @Request() req: Req,
     @RequestUser() user: User,
     @Param('bucketKey') bucketKey: string,
-    @Param('filename') filePath: string,
+    @Param('filename') filename: string,
     @Body(new ZodValidationPipe(getFileSchema)) getFileDto: GetFileDto,
   ) {
     const bucket = await this.bucketsService.findOne(bucketKey);
@@ -86,33 +83,26 @@ export class FilesController {
 
     const { file, metadata } = await this.filesService.getFile(
       bucket.dataValues,
-      filePath,
+      filename,
       getFileDto.password,
     );
 
-    const statusCode = !isAjax(req)
+    const isAjaxRequest = isAjax(req);
+    const statusCode = !isAjaxRequest
       ? HttpStatus.OK
       : HttpStatus.PARTIAL_CONTENT;
 
+    const disposition = !isAjaxRequest
+      ? FileDispositionHeader.INLINE
+      : FileDispositionHeader.ATTACHMENT;
+
     return res
       .status(statusCode)
-      .set(this.getSendFileHeaders(metadata, file))
+      .set(getSendFileHeaders(metadata, disposition, file))
       .send(file);
   }
 
-  private getSendFileHeaders(metadata: FileMetadata, file: Buffer) {
-    return {
-      'Content-Type': metadata.mimeType,
-      'Content-Disposition': `attachment; filename="${metadata.name}${metadata.extension}"`,
-      'Content-Transfer-Encoding': 'binary',
-      'Accept-Ranges': 'bytes',
-      'Cache-Control': 'private',
-      'Content-Length': file.byteLength,
-      Pragma: 'private',
-    };
-  }
-
-  // @Delete(':id')
+  // @Delete(':bucketKey/:filename')
   // public destroy(@Param('id') id: string) {
   //   return this.filesService.remove(+id);
   // }

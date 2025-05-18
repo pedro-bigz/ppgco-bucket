@@ -1,9 +1,9 @@
 import { CommandFactory } from 'nest-commander';
 import { AppModule } from './app.module';
-import { configHelper } from 'src/core';
+import { isProduction } from './utils';
 
 async function bootstrap() {
-  if (!configHelper.isProduction()) {
+  if (!isProduction()) {
     await CommandFactory.run(AppModule, ['warn', 'debug', 'error', 'log']);
   }
 }

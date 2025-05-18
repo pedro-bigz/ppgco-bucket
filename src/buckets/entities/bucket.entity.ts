@@ -1,20 +1,16 @@
-import { ApiHideProperty } from '@nestjs/swagger';
 import {
   BelongsTo,
   Column,
-  CreatedAt,
   ForeignKey,
   Model,
   Table,
-  UpdatedAt,
 } from 'sequelize-typescript';
-import { User } from 'src/user';
+import { User } from 'src/users';
 
 @Table({ tableName: 'buckets' })
 export class Bucket extends Model {
-  @ApiHideProperty()
-  @Column({ primaryKey: true, autoIncrement: true })
-  id: number;
+  @Column({ primaryKey: true, autoIncrement: false })
+  bucketKey: string;
 
   @Column
   name: string;
@@ -27,9 +23,6 @@ export class Bucket extends Model {
 
   @Column
   isPrivate: boolean;
-
-  @Column
-  bucketKey: string;
 
   @Column
   @ForeignKey(() => User)

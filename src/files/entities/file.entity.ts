@@ -2,11 +2,9 @@ import { ApiHideProperty } from '@nestjs/swagger';
 import {
   BelongsTo,
   Column,
-  CreatedAt,
   ForeignKey,
   Model,
   Table,
-  UpdatedAt,
 } from 'sequelize-typescript';
 import { Bucket } from 'src/buckets';
 
@@ -36,7 +34,7 @@ export class File extends Model {
 
   @Column
   @ForeignKey(() => Bucket)
-  bucketId: number;
+  bucketKey: string;
 
   @BelongsTo(() => Bucket)
   bucket: Bucket;

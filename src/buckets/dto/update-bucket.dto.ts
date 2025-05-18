@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { customCreateZodDto } from 'src/core';
+import { createZodDto } from 'nestjs-zod';
 
 export const updateBucketsSchema = z.object({
   name: z.string().max(255),
@@ -8,4 +8,4 @@ export const updateBucketsSchema = z.object({
   active: z.boolean().optional().transform(Boolean),
 });
 
-export class UpdateBucketsDto extends customCreateZodDto(updateBucketsSchema) {}
+export class UpdateBucketsDto extends createZodDto(updateBucketsSchema) {}

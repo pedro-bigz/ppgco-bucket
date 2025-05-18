@@ -8,8 +8,9 @@ export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 export const Private = () => SetMetadata(IS_PUBLIC_KEY, false);
 
-export const IS_FORCED_AUTH = 'isForceAuth';
-export const ForceAuth = () => SetMetadata(IS_FORCED_AUTH, true);
+export const DONT_THROW_ACCESS_ERRORS = 'dontThrowAccessErrors';
+export const DontThrowAccessErrors = () =>
+  SetMetadata(DONT_THROW_ACCESS_ERRORS, true);
 
 export const BearerToken = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {

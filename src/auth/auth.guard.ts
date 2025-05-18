@@ -1,72 +1,77 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
   Injectable,
+  Scope,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { IS_FORCED_AUTH, IS_PUBLIC_KEY } from './auth.decorator';
-import { ConfigService } from '@nestjs/config';
-import { UserService } from 'src/user';
+import { DONT_THROW_ACCESS_ERRORS, IS_PUBLIC_KEY } from './auth.decorator';
+import { AuthService } from './auth.service';
 
 export type UserPayload = {
   _id: number;
   email: string;
 };
 
-@Injectable()
+@Injectable({ scope: Scope.REQUEST })
 export class AuthGuard implements CanActivate {
   public constructor(
-    private readonly jwtService: JwtService,
     private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
-    private readonly userService: UserService,
+    private readonly authService: AuthService,
   ) {}
+
+  public dontThrowErrors(context: ExecutionContext) {
+    return this.reflector.getAllAndOverride<boolean>(DONT_THROW_ACCESS_ERRORS, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+  }
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    const isForceAuth = this.reflector.getAllAndOverride<boolean>(
-      IS_FORCED_AUTH,
-      [context.getHandler(), context.getClass()],
-    );
 
-    if (isPublic && !isForceAuth) return true;
+    if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    try {
+      const request = context.switchToHttp().getRequest<Request>();
 
-    if (!token && isForceAuth) {
-      return true;
-    }
+      if (!this.authService.hasValidHeaders()) {
+        throw new UnauthorizedException('Invalid API key ou Secret Key');
+      }
 
-    if (!token) {
+      if (!this.authService.isTimestampValid()) {
+        throw new UnauthorizedException('Invalid or expired timestamp');
+      }
+
+      const user = await this.authService.getCurrentUser();
+
+      const isValidSignature = this.authService.validateSignature(
+        user.secretAccessKey,
+      );
+
+      if (!isValidSignature) {
+        throw new UnauthorizedException('Invalid signature');
+      }
+
+      request['user'] = user;
+    } catch (error) {
+      if (this.dontThrowErrors(context)) {
+        return true;
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
       throw new UnauthorizedException();
     }
 
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET_KEY'),
-      });
-
-      const user = await this.userService.findOne(payload._id);
-
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
-      request['user'] = user.dataValues;
-    } catch (error) {
-      throw new UnauthorizedException(error, error.message);
-    }
-
     return true;
-  }
-
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
   }
 }

@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { generateUUID } from 'src/utils';
 import { FILES_REPOSITORY } from './files.constants';
@@ -26,9 +25,9 @@ export class FilesService {
     private readonly sequelize: Sequelize,
   ) {}
 
-  public findOne(bucket: Bucket, path: string, extension: string) {
+  public findOne(bucketKey: string, path: string) {
     return this.fileModel.findOne({
-      where: { path, bucketId: bucket.id },
+      where: { path, bucketKey },
     });
   }
 
@@ -37,9 +36,7 @@ export class FilesService {
   }
 
   public async getFile(bucket: Bucket, filePath: string, password?: string) {
-    const filename = this.filesystemService.filename(filePath);
-    const extname = this.filesystemService.extname(filePath);
-    const metadata = await this.findOne(bucket, filename, extname);
+    const metadata = await this.findOne(bucket.bucketKey, filePath);
 
     if (!metadata) {
       throw new NotFoundException('File not found');
@@ -57,7 +54,7 @@ export class FilesService {
 
     const file = await this.filesystemService.getFromBucket(
       bucket.bucketKey,
-      metadata.path + metadata.extension,
+      metadata.path,
     );
 
     if (!file) {
@@ -73,9 +70,9 @@ export class FilesService {
     uploadFileDto: UploadFileDto,
   ) {
     const metadata = {
-      path: generateUUID(),
+      path: uploadFileDto.filename,
+      name: file.originalname,
       extension: path.extname(file.originalname),
-      name: path.normalize(file.originalname),
     };
 
     return this.sequelize.transaction(async (transaction) => {
@@ -83,7 +80,7 @@ export class FilesService {
         {
           ...uploadFileDto,
           ...metadata,
-          bucketId: bucket.id,
+          bucketKey: bucket.bucketKey,
           mimeType: file.mimetype,
           name: metadata.name.replace(metadata.extension, ''),
           password: uploadFileDto.password
@@ -93,8 +90,11 @@ export class FilesService {
         { transaction },
       );
 
-      const filepath =
-        bucket.bucketKey + '/' + fileRegister.path + metadata.extension;
+      console.log({
+        path: path.join(bucket.bucketKey, fileRegister.path),
+      });
+
+      const filepath = path.join(bucket.bucketKey, fileRegister.path);
       const status = await this.filesystemService.put(filepath, file.buffer);
 
       if (!status) {

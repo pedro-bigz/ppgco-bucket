@@ -1,4 +1,4 @@
-import { insensitiveLike } from '../insensitiveLike';
+import { insensitiveLike } from '../database/insensitiveLike';
 
 interface filtredSearchDataInterface {
   search?: string;

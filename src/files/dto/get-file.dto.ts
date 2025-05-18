@@ -1,5 +1,5 @@
-import { customCreateZodDto } from 'src/core';
 import { z } from 'zod';
+import { createZodDto } from 'nestjs-zod';
 
 export const getFileSchema = z.object({
   password: z
@@ -9,4 +9,4 @@ export const getFileSchema = z.object({
     .transform((val) => val ?? ''),
 });
 
-export class GetFileDto extends customCreateZodDto(getFileSchema) {}
+export class GetFileDto extends createZodDto(getFileSchema) {}

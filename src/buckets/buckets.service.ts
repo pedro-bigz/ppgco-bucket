@@ -8,7 +8,7 @@ import { Sequelize } from 'sequelize-typescript';
 import _omit from 'lodash/omit';
 
 import { generateUUID } from 'src/utils';
-import { User } from 'src/user';
+import { User } from 'src/users';
 import { FilesystemService } from 'src/filesystem';
 import { BUCKETS_REPOSITORY } from './buckets.constants';
 import { Bucket } from './entities';

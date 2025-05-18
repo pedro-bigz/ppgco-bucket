@@ -1,12 +1,16 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from 'src/app.module';
 import { AppSwagger } from 'src/app.swagger';
-import { configHelper } from 'src/core';
+import { getPort, ipv4Url, isProduction } from 'src/utils';
+import { AppLogger } from './app.logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: AppLogger.create(isProduction()).config(),
+  });
 
-  if (!configHelper.isProduction()) {
+  if (!isProduction()) {
     const swaggerData = {
       title: process.env.APP_NAME as string,
       description: process.env.APP_DESCRIPTION as string,
@@ -18,6 +22,13 @@ async function bootstrap() {
 
   app.enableCors();
 
-  await app.listen(configHelper.getPort('4002'));
+  await app.listen(getPort(4001));
+
+  const url = await app.getUrl();
+
+  if (!isProduction()) {
+    console.log(`Application is running on: ${ipv4Url(url)}`);
+    console.log(`You can access swagger on: ${ipv4Url(url)}/swagger`);
+  }
 }
 bootstrap();

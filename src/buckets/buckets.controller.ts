@@ -7,7 +7,7 @@ import {
   updateBucketsSchema,
 } from './dto';
 import { ZodValidationPipe } from 'src/core';
-import { RequestUser, User } from 'src/user';
+import { RequestUser, User } from 'src/users';
 
 @Controller('buckets')
 export class BucketsController {
@@ -19,6 +19,7 @@ export class BucketsController {
     @Body(new ZodValidationPipe(createBucketsSchema))
     createBucketsDto: CreateBucketsDto,
   ) {
+    console.log('buckets.create');
     return this.bucketsService.create(user.id, createBucketsDto);
   }
 
