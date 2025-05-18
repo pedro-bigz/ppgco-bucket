@@ -19,7 +19,6 @@ export class BucketsController {
     @Body(new ZodValidationPipe(createBucketsSchema))
     createBucketsDto: CreateBucketsDto,
   ) {
-    console.log('buckets.create');
     return this.bucketsService.create(user.id, createBucketsDto);
   }
 

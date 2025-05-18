@@ -38,13 +38,6 @@ export class ApiKeyService {
     const bodyString = this.formatter.formatBody();
     const slashedPath = this.formatter.formatPath();
 
-    // console.log({
-    //   timestamp: this.headers.getTimestamp(),
-    //   method,
-    //   slashedPath,
-    //   bodyString,
-    // });
-
     return this.headers.getTimestamp() + method + slashedPath + bodyString;
   }
 
@@ -55,7 +48,6 @@ export class ApiKeyService {
   }
 
   public validateSignature(storedSecretKey: string) {
-    console.log({ storedSecretKey, secretKey: this.secretKey });
     const encrypted = this.encryptRequest(storedSecretKey);
     return encrypted.compare(this.secretKey);
   }

@@ -42,8 +42,6 @@ export class FilesService {
       throw new NotFoundException('File not found');
     }
 
-    console.log({ metadata });
-
     if (
       metadata.password &&
       !password &&
@@ -89,10 +87,6 @@ export class FilesService {
         },
         { transaction },
       );
-
-      console.log({
-        path: path.join(bucket.bucketKey, fileRegister.path),
-      });
 
       const filepath = path.join(bucket.bucketKey, fileRegister.path);
       const status = await this.filesystemService.put(filepath, file.buffer);

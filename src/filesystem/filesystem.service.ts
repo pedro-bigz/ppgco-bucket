@@ -30,12 +30,8 @@ export class FilesystemService {
     const filename = this.filename(filepath);
     const extname = this.extname(filepath);
 
-    console.log({ filename, extname });
-
     const basename = filename + extname;
     const absolutepath = this.applyBucketPath(basename);
-
-    console.log({ basename, absolutepath });
 
     return this.upload(absolutepath, buffer)
       .then(() => true)
